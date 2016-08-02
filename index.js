@@ -67,6 +67,16 @@ class AdapterPicker {
   }
 
   /**
+   * Retrieve an adapter.
+   *
+   * @param {string}   protocol
+   * @return {object}  adapter
+   */
+  get(protocol) {
+    return this.adapters.get(protocol)
+  }
+
+  /**
   * Remove an adapter.
   *
   * @param {string|null} protocol

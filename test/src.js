@@ -12,9 +12,14 @@ test('throw error on unknown protocol', t => {
 
 test('use a registered protocol', t => {
   const src = spy()
+  const defaultAdapter = { src, dest: noop }
 
-  vp.add('file', { src, dest: noop })
+  vp.add('file', defaultAdapter)
   vp.src('file://*.txt', { read: false })
+
+  const adapter = vp.get('file')
+  t.deepEqual(adapter, defaultAdapter)
+
   vp.remove('file')
 
   t.true(src.calledWith('*.txt', { read: false }))
