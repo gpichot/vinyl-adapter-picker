@@ -3,16 +3,94 @@
 const url = require('url')
 const merge = require('merge-stream')
 
-/** Map of adapters. */
-const adapters = new Map()
+class AdapterPicker {
+
+  constructor() {
+    this.adapters = new Map()
+  }
+
+  /**
+  * Handle the given glob.
+  * Internally it gets the associated adapter and call either `src` or `dest`.
+  *
+  * @protected
+  * @param  {('src'|'dest')} type
+  * @param  {string}         glob
+  * @param  {object}         [options]
+  * @return {stream}
+  */
+  _handle(type, glob, options) {
+    const uri = parse(glob)
+    const adapter = this.adapters.get(uri.protocol)
+
+    if (!adapter) {
+      throw new Error(`Unknown protocol: ${uri.protocol}`)
+    }
+
+    return adapter[type](uri.path, options)
+  }
+
+  /**
+  * Create a stream of vinyl files given globs using the appropriate adapter.
+  *
+  * @param  {string|array} globs
+  * @param  {object}       [options]
+  * @return {stream}
+  */
+  src(globs, options) {
+    if (Array.isArray(globs)) {
+      const streams = globs.map(glob => this._handle('src', glob, options))
+      return merge.apply(null, streams)
+    }
+    return this._handle('src', globs, options)
+  }
+
+  /**
+  * Create a stream of vinyl files given an uri using the appropriate adapter.
+  *
+  * @param  {string} uri
+  * @param  {object} [options]
+  * @return {stream}
+  */
+  dest(uri, options) {
+    return this._handle('dest', uri, options)
+  }
+
+  /**
+  * Add a new adapter.
+  *
+  * @param {string|null} protocol
+  * @param {object}      adapter
+  */
+  add(protocol, adapter) {
+    this.adapters.set(protocol, adapter)
+  }
+
+  /**
+  * Remove an adapter.
+  *
+  * @param {string|null} protocol
+  */
+  remove(protocol) {
+    this.adapters.delete(protocol)
+  }
+
+  /**
+  * Clear all registered adapters.
+  */
+  clear() {
+    this.adapters.clear()
+  }
+
+}
 
 /**
- * Parse a string uri into an object uri.
- *
- * @protected
- * @param  {string} uri
- * @return {url}
- */
+* Parse a string uri into an object uri.
+*
+* @protected
+* @param  {string} uri
+* @return {url}
+*/
 function parse(uri) {
   uri = url.parse(uri)
 
@@ -29,77 +107,5 @@ function parse(uri) {
   return uri
 }
 
-/**
- * Handle the given glob.
- * Internally it gets the associated adapter and call either `src` or `dest`.
- *
- * @protected
- * @param  {('src'|'dest')} type
- * @param  {string}         glob
- * @param  {object}         [options]
- * @return {stream}
- */
-function handle(type, glob, options) {
-  const uri = parse(glob)
-  const adapter = adapters.get(uri.protocol)
-
-  if (!adapter) {
-    throw new Error(`Unknown protocol: ${uri.protocol}`)
-  }
-
-  return adapter[type](uri.path, options)
-}
-
-/**
- * Create a stream of vinyl files given globs using the appropriate adapter.
- *
- * @param  {string|array} globs
- * @param  {object}       [options]
- * @return {stream}
- */
-function src(globs, options) {
-  if (Array.isArray(globs)) {
-    const streams = globs.map(glob => handle('src', glob, options))
-    return merge.apply(null, streams)
-  }
-  return handle('src', globs, options)
-}
-
-/**
- * Create a stream of vinyl files given an uri using the appropriate adapter.
- *
- * @param  {string} uri
- * @param  {object} [options]
- * @return {stream}
- */
-function dest(uri, options) {
-  return handle('dest', uri, options)
-}
-
-/**
- * Add a new adapter.
- *
- * @param {string|null} protocol
- * @param {object}      adapter
- */
-function add(protocol, adapter) {
-  adapters.set(protocol, adapter)
-}
-
-/**
- * Remove an adapter.
- *
- * @param {string|null} protocol
- */
-function remove(protocol) {
-  adapters.delete(protocol)
-}
-
-/**
- * Clear all registered adapters.
- */
-function clear() {
-  adapters.clear()
-}
-
-module.exports = { src, dest, add, remove, clear }
+module.exports = new AdapterPicker()
+module.exports.AdapterPicker = AdapterPicker
