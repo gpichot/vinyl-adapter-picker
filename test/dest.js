@@ -15,5 +15,5 @@ test('use a registered protocol', t => {
   vp.dest('file://*.txt', { read: false })
   vp.remove('file')
 
-  t.true(dest.calledWith('*.txt', { read: false }))
+  t.true(dest.calledWith('file://*.txt', { read: false }))
 })

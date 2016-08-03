@@ -22,7 +22,7 @@ test('use a registered protocol', t => {
 
   vp.remove('file')
 
-  t.true(src.calledWith('*.txt', { read: false }))
+  t.true(src.calledWith('file://*.txt', { read: false }))
 })
 
 test('use default protocol', t => {

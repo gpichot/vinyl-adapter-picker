@@ -27,7 +27,7 @@ class AdapterPicker {
       throw new Error(`Unknown protocol: ${uri.protocol}`)
     }
 
-    return adapter[type](uri.path, options)
+    return adapter[type](glob, options)
   }
 
   /**
